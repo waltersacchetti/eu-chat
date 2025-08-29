@@ -9,9 +9,9 @@ router.get('/profile', async (req, res) => {
     const userId = req.user.id;
 
     const userResult = await query(
-      `SELECT id, email, username, first_name, last_name, phone_number, 
+      `SELECT id, email, username, first_name, last_name, 
               avatar_url, is_active, is_verified, last_login, created_at
-       FROM users WHERE id = $1`,
+       FROM eu_chat_users WHERE id = $1`,
       [userId]
     );
 
@@ -162,7 +162,7 @@ router.put('/change-password', async (req, res) => {
 
     // Obtener contraseña actual
     const currentPasswordResult = await query(
-      'SELECT password_hash FROM users WHERE id = $1',
+      'SELECT password_hash FROM eu_chat_users WHERE id = $1',
       [userId]
     );
 
@@ -192,7 +192,7 @@ router.put('/change-password', async (req, res) => {
 
     // Actualizar contraseña
     await query(
-      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+      'UPDATE eu_chat_users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
       [newPasswordHash, userId]
     );
 
@@ -226,7 +226,7 @@ router.put('/deactivate', async (req, res) => {
 
     // Verificar contraseña
     const passwordResult = await query(
-      'SELECT password_hash FROM users WHERE id = $1',
+      'SELECT password_hash FROM eu_chat_users WHERE id = $1',
       [userId]
     );
 
@@ -251,7 +251,7 @@ router.put('/deactivate', async (req, res) => {
 
     // Desactivar cuenta
     await query(
-      'UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1',
+      'UPDATE eu_chat_users SET is_active = false, updated_at = NOW() WHERE id = $1',
       [userId]
     );
 
@@ -277,7 +277,7 @@ router.get('/stats', async (req, res) => {
 
     // Estadísticas de contactos
     const contactsStats = await query(
-      'SELECT COUNT(*) as total_contacts FROM contacts WHERE user_id = $1',
+      'SELECT COUNT(*) as total_contacts FROM eu_chat_contacts WHERE user_id = $1',
       [userId]
     );
 
@@ -287,7 +287,7 @@ router.get('/stats', async (req, res) => {
         COUNT(*) as total_conversations,
         COUNT(CASE WHEN unread_count > 0 THEN 1 END) as conversations_with_unread,
         SUM(unread_count) as total_unread_messages
-       FROM conversations WHERE user_id = $1`,
+       FROM eu_chat_conversations WHERE user_id = $1`,
       [userId]
     );
 
@@ -297,8 +297,8 @@ router.get('/stats', async (req, res) => {
         COUNT(*) as total_messages,
         COUNT(CASE WHEN is_from_user = true THEN 1 END) as sent_messages,
         COUNT(CASE WHEN is_from_user = false THEN 1 END) as received_messages
-       FROM messages m
-       JOIN conversations c ON m.conversation_id = c.id
+       FROM eu_chat_messages m
+       JOIN eu_chat_conversations c ON m.conversation_id = c.id
        WHERE c.user_id = $1`,
       [userId]
     );
@@ -310,9 +310,9 @@ router.get('/stats', async (req, res) => {
         p.display_name as platform_display_name,
         COUNT(DISTINCT c.id) as conversations_count,
         COUNT(DISTINCT co.id) as contacts_count
-       FROM platforms p
-       LEFT JOIN conversations c ON p.id = c.platform_id AND c.user_id = $1
-       LEFT JOIN contacts co ON p.id = co.platform_id AND co.user_id = $1
+       FROM eu_chat_platforms p
+       LEFT JOIN eu_chat_conversations c ON p.id = c.platform_id AND c.user_id = $1
+       LEFT JOIN eu_chat_contacts co ON p.id = co.platform_id AND co.user_id = $1
        WHERE p.is_active = true
        GROUP BY p.id, p.name, p.display_name
        ORDER BY conversations_count DESC`,
