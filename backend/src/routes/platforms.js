@@ -10,9 +10,9 @@ router.get('/', async (req, res) => {
     // Construir query base
     let baseQuery = `
       SELECT 
-        id, name, display_name, description, api_url, icon_url, color_hex,
-        is_active, is_verified, supported_features, api_version, created_at, updated_at
-       FROM platforms
+        id, name, display_name, api_url, icon_url, color_hex,
+        is_active, requires_verification, supports_e2ee, created_at, updated_at
+       FROM eu_chat_platforms
        WHERE 1=1
     `;
 
@@ -36,7 +36,7 @@ router.get('/', async (req, res) => {
     // Contar total de plataformas (sin paginación)
     let countQuery = `
       SELECT COUNT(*) as total
-      FROM platforms
+      FROM eu_chat_platforms
       WHERE 1=1
     `;
 
@@ -56,14 +56,12 @@ router.get('/', async (req, res) => {
       id: row.id,
       name: row.name,
       displayName: row.display_name,
-      description: row.description,
       apiUrl: row.api_url,
       iconUrl: row.icon_url,
       colorHex: row.color_hex,
       isActive: row.is_active,
-      isVerified: row.is_verified,
-      supportedFeatures: row.supported_features,
-      apiVersion: row.api_version,
+      requiresVerification: row.requires_verification,
+      supportsE2ee: row.supports_e2ee,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }));
