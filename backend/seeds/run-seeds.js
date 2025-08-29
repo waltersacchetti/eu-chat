@@ -44,62 +44,52 @@ async function createPlatforms() {
       {
         name: 'whatsapp',
         display_name: 'WhatsApp',
-        description: 'Plataforma de mensajería instantánea propiedad de Meta',
         api_url: 'https://graph.facebook.com/v18.0',
         icon_url: 'https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg',
         color_hex: '#25D366',
         is_active: true,
-        is_verified: true,
-        supported_features: JSON.stringify(['text', 'image', 'audio', 'video', 'document', 'location', 'contacts']),
-        api_version: 'v18.0'
+        requires_verification: true,
+        supports_e2ee: true
       },
       {
         name: 'telegram',
         display_name: 'Telegram',
-        description: 'Plataforma de mensajería con enfoque en privacidad y seguridad',
         api_url: 'https://api.telegram.org',
         icon_url: 'https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg',
         color_hex: '#0088CC',
         is_active: true,
-        is_verified: false,
-        supported_features: JSON.stringify(['text', 'image', 'audio', 'video', 'document', 'location', 'sticker']),
-        api_version: 'v6.0'
+        requires_verification: true,
+        supports_e2ee: true
       },
       {
         name: 'signal',
         display_name: 'Signal',
-        description: 'Aplicación de mensajería con encriptación de extremo a extremo',
         api_url: 'https://signal.org/api',
         icon_url: 'https://upload.wikimedia.org/wikipedia/commons/5/51/Signal_Logo.svg',
         color_hex: '#3A76F0',
         is_active: true,
-        is_verified: false,
-        supported_features: JSON.stringify(['text', 'image', 'audio', 'video', 'document', 'location']),
-        api_version: 'v1.0'
+        requires_verification: true,
+        supports_e2ee: true
       },
       {
         name: 'discord',
         display_name: 'Discord',
-        description: 'Plataforma de comunicación para comunidades y gaming',
         api_url: 'https://discord.com/api',
         icon_url: 'https://upload.wikimedia.org/wikipedia/commons/9/98/Discord_logo.svg',
         color_hex: '#5865F2',
         is_active: true,
-        is_verified: false,
-        supported_features: JSON.stringify(['text', 'image', 'audio', 'video', 'file']),
-        api_version: 'v10.0'
+        requires_verification: true,
+        supports_e2ee: false
       },
       {
         name: 'slack',
         display_name: 'Slack',
-        description: 'Plataforma de comunicación empresarial y colaboración en equipo',
         api_url: 'https://slack.com/api',
         icon_url: 'https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg',
         color_hex: '#4A154B',
         is_active: true,
-        is_verified: false,
-        supported_features: JSON.stringify(['text', 'image', 'file', 'thread']),
-        api_version: 'v1.0'
+        requires_verification: true,
+        supports_e2ee: false
       }
     ];
     
@@ -108,32 +98,28 @@ async function createPlatforms() {
     for (const platform of platforms) {
       const result = await pool.query(`
         INSERT INTO platforms (
-          name, display_name, description, api_url, icon_url, color_hex,
-          is_active, is_verified, supported_features, api_version
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          name, display_name, api_url, icon_url, color_hex,
+          is_active, requires_verification, supports_e2ee
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         ON CONFLICT (name) DO UPDATE SET
           display_name = EXCLUDED.display_name,
-          description = EXCLUDED.description,
           api_url = EXCLUDED.api_url,
           icon_url = EXCLUDED.icon_url,
           color_hex = EXCLUDED.color_hex,
           is_active = EXCLUDED.is_active,
-          is_verified = EXCLUDED.is_verified,
-          supported_features = EXCLUDED.supported_features,
-          api_version = EXCLUDED.api_version,
+          requires_verification = EXCLUDED.requires_verification,
+          supports_e2ee = EXCLUDED.supports_e2ee,
           updated_at = NOW()
         RETURNING id, name, display_name
       `, [
         platform.name,
         platform.display_name,
-        platform.description,
         platform.api_url,
         platform.icon_url,
         platform.color_hex,
         platform.is_active,
-        platform.is_verified,
-        platform.supported_features,
-        platform.api_version
+        platform.requires_verification,
+        platform.supports_e2ee
       ]);
       
       if (result.rows.length > 0) {
