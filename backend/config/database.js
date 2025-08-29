@@ -1,4 +1,8 @@
 const { Pool } = require('pg');
+const path = require('path');
+
+// Cargar variables de entorno
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 // Configuración de la base de datos RDS
 const dbConfig = {
