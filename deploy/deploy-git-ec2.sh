@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 # Configuración
 EC2_HOST="54.247.227.217"
 EC2_USER="ec2-user"
-EC2_KEY="~/.ssh/spainbingo-key.pem"
+EC2_KEY="deploy/spainbingo-key.pem"
 PROJECT_NAME="eu-chat-bridge"
 EC2_PATH="/eu-chat"
 BACKEND_PORT=3001
@@ -163,7 +163,7 @@ ssh -i "${EC2_KEY/#\~/$HOME}" -o StrictHostKeyChecking=no "${EC2_USER}@${EC2_HOS
 # Iniciar aplicación con PM2
 log "🚀 Iniciando aplicación con PM2..."
 ssh -i "${EC2_KEY/#\~/$HOME}" -o StrictHostKeyChecking=no "${EC2_USER}@${EC2_HOST}" "
-    cd ${EC2_PATH}
+    cd ${EC2_PATH}/backend
     pm2 start ecosystem.config.js --env production
 "
 
