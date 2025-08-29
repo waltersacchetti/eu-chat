@@ -7,13 +7,13 @@ const dbConfig = {
   database: process.env.DB_NAME || 'spainbingo',
   user: process.env.DB_USER || 'spainbingo_admin',
   password: process.env.DB_PASSWORD || '',
-  ssl: process.env.DB_SSL === 'true' ? {
+  ssl: {
     rejectUnauthorized: false,
     checkServerIdentity: () => undefined,
     ca: undefined,
     key: undefined,
     cert: undefined
-  } : false,
+  },
   max: 20, // máximo de conexiones en el pool
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
