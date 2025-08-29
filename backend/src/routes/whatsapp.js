@@ -171,7 +171,7 @@ async function processWhatsAppStatus(status, metadata) {
 
     // Buscar mensaje por platform_message_id
     const messageResult = await query(
-      'SELECT id, conversation_id FROM messages WHERE platform_message_id = $1',
+      'SELECT id, conversation_id FROM eu_chat_messages WHERE platform_message_id = $1',
       [platformMessageId]
     );
 
@@ -197,7 +197,7 @@ async function findOrCreateContact(phoneNumber, platformId) {
   try {
     // Buscar contacto existente
     let contactResult = await query(
-      'SELECT id FROM contacts WHERE phone_number = $1 AND platform_id = $2',
+      'SELECT id FROM eu_chat_contacts WHERE phone_number = $1 AND platform_id = $2',
       [phoneNumber, platformId]
     );
 
@@ -228,7 +228,7 @@ async function findOrCreateConversation(contactId, platformId) {
   try {
     // Buscar conversación existente
     let conversationResult = await query(
-      'SELECT id, platform_id FROM conversations WHERE contact_id = $1 AND platform_id = $2',
+      'SELECT id, platform_id FROM eu_chat_conversations WHERE contact_id = $1 AND platform_id = $2',
       [contactId, platformId]
     );
 

@@ -11,15 +11,15 @@ router.get('/', async (req, res) => {
     // Construir query base
     let baseQuery = `
       SELECT 
-        c.id, c.title, c.last_message_text, c.last_message_at, c.unread_count,
-        c.is_archived, c.is_pinned, c.created_at, c.updated_at,
+        c.id, c.title, c.last_message_text, c.last_message_timestamp, c.unread_count,
+        c.is_archived, c.created_at, c.updated_at,
         p.name as platform_name, p.display_name as platform_display_name,
         p.icon_url as platform_icon, p.color_hex as platform_color,
         co.display_name as contact_name, co.avatar_url as contact_avatar,
         co.platform_contact_id
-      FROM conversations c
-      JOIN platforms p ON c.platform_id = p.id
-      LEFT JOIN contacts co ON c.contact_id = co.id
+      FROM eu_chat_conversations c
+      JOIN eu_chat_platforms p ON c.platform_id = p.id
+      LEFT JOIN eu_chat_contacts co ON c.contact_id = co.id
       WHERE c.user_id = $1
     `;
 
@@ -49,7 +49,7 @@ router.get('/', async (req, res) => {
     }
 
     // Ordenamiento y paginación
-    baseQuery += ` ORDER BY c.is_pinned DESC, c.last_message_at DESC NULLS LAST, c.created_at DESC`;
+    baseQuery += ` ORDER BY c.last_message_timestamp DESC NULLS LAST, c.created_at DESC`;
     baseQuery += ` LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
     queryParams.push(parseInt(limit), parseInt(offset));
 
@@ -58,8 +58,8 @@ router.get('/', async (req, res) => {
     // Contar total de conversaciones (sin paginación)
     let countQuery = `
       SELECT COUNT(*) as total
-      FROM conversations c
-      JOIN platforms p ON c.platform_id = p.id
+      FROM eu_chat_conversations c
+      JOIN eu_chat_platforms p ON c.platform_id = p.id
       WHERE c.user_id = $1
     `;
 
@@ -93,10 +93,9 @@ router.get('/', async (req, res) => {
       id: row.id,
       title: row.title,
       lastMessageText: row.last_message_text,
-      lastMessageAt: row.last_message_at,
+      lastMessageAt: row.last_message_timestamp,
       unreadCount: parseInt(row.unread_count) || 0,
       isArchived: row.is_archived,
-      isPinned: row.is_pinned,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       platform: {
@@ -140,15 +139,15 @@ router.get('/:id', async (req, res) => {
 
     const conversationResult = await query(
       `SELECT 
-        c.id, c.title, c.last_message_text, c.last_message_at, c.unread_count,
-        c.is_archived, c.is_pinned, c.created_at, c.updated_at,
+        c.id, c.title, c.last_message_text, c.last_message_timestamp, c.unread_count,
+        c.is_archived, c.created_at, c.updated_at,
         p.name as platform_name, p.display_name as platform_display_name,
         p.icon_url as platform_icon, p.color_hex as platform_color,
         co.id as contact_id, co.display_name as contact_name, 
         co.avatar_url as contact_avatar, co.platform_contact_id
-       FROM conversations c
-       JOIN platforms p ON c.platform_id = p.id
-       LEFT JOIN contacts co ON c.contact_id = co.id
+       FROM eu_chat_conversations c
+       JOIN eu_chat_platforms p ON c.platform_id = p.id
+       LEFT JOIN eu_chat_contacts co ON c.contact_id = co.id
        WHERE c.id = $1 AND c.user_id = $2`,
       [conversationId, userId]
     );
@@ -165,7 +164,7 @@ router.get('/:id', async (req, res) => {
     // Marcar mensajes como leídos
     if (conversation.unread_count > 0) {
       await query(
-        'UPDATE conversations SET unread_count = 0, updated_at = NOW() WHERE id = $1',
+        'UPDATE eu_chat_conversations SET unread_count = 0, updated_at = NOW() WHERE id = $1',
         [conversationId]
       );
       console.log(`📖 Mensajes marcados como leídos en conversación: ${conversation.title}`);
@@ -177,10 +176,9 @@ router.get('/:id', async (req, res) => {
         id: conversation.id,
         title: conversation.title,
         lastMessageText: conversation.last_message_text,
-        lastMessageAt: conversation.last_message_at,
+        lastMessageAt: conversation.last_message_timestamp,
         unreadCount: 0, // Ya se marcaron como leídos
         isArchived: conversation.is_archived,
-        isPinned: conversation.is_pinned,
         createdAt: conversation.created_at,
         updatedAt: conversation.updated_at,
         platform: {
@@ -222,7 +220,7 @@ router.post('/', async (req, res) => {
 
     // Verificar que la plataforma existe y está activa
     const platformResult = await query(
-      'SELECT id, name FROM platforms WHERE id = $1 AND is_active = true',
+      'SELECT id, name FROM eu_chat_platforms WHERE id = $1 AND is_active = true',
       [platformId]
     );
 
@@ -236,7 +234,7 @@ router.post('/', async (req, res) => {
     // Verificar que el contacto existe y pertenece al usuario (si se proporciona)
     if (contactId) {
       const contactResult = await query(
-        'SELECT id FROM contacts WHERE id = $1 AND user_id = $2',
+        'SELECT id FROM eu_chat_contacts WHERE id = $1 AND user_id = $2',
         [contactId, userId]
       );
 
@@ -250,10 +248,10 @@ router.post('/', async (req, res) => {
 
     // Crear conversación
     const newConversation = await query(
-      `INSERT INTO conversations (
-        user_id, platform_id, contact_id, title, last_message_text, last_message_at
+      `INSERT INTO eu_chat_conversations (
+        user_id, platform_id, contact_id, title, last_message_text, last_message_timestamp
       ) VALUES ($1, $2, $3, $4, $5, NOW())
-      RETURNING id, title, last_message_text, last_message_at, created_at`,
+      RETURNING id, title, last_message_text, last_message_timestamp, created_at`,
       [userId, platformId, contactId || null, title, initialMessage || null]
     );
 
@@ -267,10 +265,9 @@ router.post('/', async (req, res) => {
         id: conversation.id,
         title: conversation.title,
         lastMessageText: conversation.last_message_text,
-        lastMessageAt: conversation.last_message_at,
+        lastMessageAt: conversation.last_message_timestamp,
         unreadCount: 0,
         isArchived: false,
-        isPinned: false,
         createdAt: conversation.created_at
       }
     });
@@ -293,7 +290,7 @@ router.put('/:id', async (req, res) => {
 
     // Verificar que la conversación existe y pertenece al usuario
     const existingConversation = await query(
-      'SELECT id, title FROM conversations WHERE id = $1 AND user_id = $2',
+      'SELECT id, title FROM eu_chat_conversations WHERE id = $1 AND user_id = $2',
       [conversationId, userId]
     );
 
@@ -321,11 +318,12 @@ router.put('/:id', async (req, res) => {
       paramCount++;
     }
 
-    if (isPinned !== undefined) {
-      updateFields.push(`is_pinned = $${paramCount}`);
-      values.push(isPinned);
-      paramCount++;
-    }
+    // Nota: is_pinned no está disponible en la base de datos actual
+    // if (isPinned !== undefined) {
+    //   updateFields.push(`is_pinned = $${paramCount}`);
+    //   values.push(isPinned);
+    //   paramCount++;
+    // }
 
     if (updateFields.length === 0) {
       return res.status(400).json({
@@ -339,10 +337,10 @@ router.put('/:id', async (req, res) => {
     values.push(conversationId);
 
     const updateQuery = `
-      UPDATE conversations 
+      UPDATE eu_chat_conversations 
       SET ${updateFields.join(', ')}
       WHERE id = $${paramCount}
-      RETURNING id, title, is_archived, is_pinned, updated_at
+      RETURNING id, title, is_archived, updated_at
     `;
 
     const result = await query(updateQuery, values);
@@ -357,7 +355,6 @@ router.put('/:id', async (req, res) => {
         id: updatedConversation.id,
         title: updatedConversation.title,
         isArchived: updatedConversation.is_archived,
-        isPinned: updatedConversation.is_pinned,
         updatedAt: updatedConversation.updated_at
       }
     });
@@ -387,7 +384,7 @@ router.put('/:id/archive', async (req, res) => {
 
     // Verificar que la conversación existe y pertenece al usuario
     const existingConversation = await query(
-      'SELECT id, title FROM conversations WHERE id = $1 AND user_id = $2',
+      'SELECT id, title FROM eu_chat_conversations WHERE id = $1 AND user_id = $2',
       [conversationId, userId]
     );
 
@@ -400,7 +397,7 @@ router.put('/:id/archive', async (req, res) => {
 
     // Actualizar estado de archivado
     await query(
-      'UPDATE conversations SET is_archived = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3',
+      'UPDATE eu_chat_conversations SET is_archived = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3',
       [isArchived, conversationId, userId]
     );
 
@@ -421,54 +418,13 @@ router.put('/:id/archive', async (req, res) => {
   }
 });
 
-// Pin/unpin conversación
+// Pin/unpin conversación - FUNCIONALIDAD NO DISPONIBLE
+// La columna is_pinned no existe en la base de datos actual
 router.put('/:id/pin', async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const conversationId = req.params.id;
-    const { isPinned } = req.body;
-
-    if (typeof isPinned !== 'boolean') {
-      return res.status(400).json({
-        error: 'Dato inválido',
-        message: 'isPinned debe ser un valor booleano'
-      });
-    }
-
-    // Verificar que la conversación existe y pertenece al usuario
-    const existingConversation = await query(
-      'SELECT id, title FROM conversations WHERE id = $1 AND user_id = $2',
-      [conversationId, userId]
-    );
-
-    if (existingConversation.rows.length === 0) {
-      return res.status(404).json({
-        error: 'Conversación no encontrada',
-        message: 'La conversación solicitada no existe'
-      });
-    }
-
-    // Actualizar estado de pin
-    await query(
-      'UPDATE conversations SET is_pinned = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3',
-      [isPinned, conversationId, userId]
-    );
-
-    const action = isPinned ? 'pinned' : 'unpinned';
-    console.log(`📌 Conversación ${action}: ${existingConversation.rows[0].title}`);
-
-    res.json({
-      message: `Conversación ${action} exitosamente`,
-      isPinned
-    });
-
-  } catch (error) {
-    console.error('❌ Error pinning conversación:', error);
-    res.status(500).json({
-      error: 'Error interno del servidor',
-      message: 'Error pinning la conversación'
-    });
-  }
+  res.status(501).json({
+    error: 'Función no implementada',
+    message: 'La funcionalidad de pin no está disponible en esta versión'
+  });
 });
 
 // Eliminar conversación
@@ -479,7 +435,7 @@ router.delete('/:id', async (req, res) => {
 
     // Verificar que la conversación existe y pertenece al usuario
     const existingConversation = await query(
-      'SELECT id, title FROM conversations WHERE id = $1 AND user_id = $2',
+      'SELECT id, title FROM eu_chat_conversations WHERE id = $1 AND user_id = $2',
       [conversationId, userId]
     );
 
@@ -492,7 +448,7 @@ router.delete('/:id', async (req, res) => {
 
     // Eliminar conversación (esto también eliminará los mensajes asociados por CASCADE)
     await query(
-      'DELETE FROM conversations WHERE id = $1 AND user_id = $2',
+      'DELETE FROM eu_chat_conversations WHERE id = $1 AND user_id = $2',
       [conversationId, userId]
     );
 

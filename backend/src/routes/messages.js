@@ -11,7 +11,7 @@ router.get('/conversation/:conversationId', async (req, res) => {
 
     // Verificar que la conversación existe y pertenece al usuario
     const conversationResult = await query(
-      'SELECT id, title FROM conversations WHERE id = $1 AND user_id = $2',
+      'SELECT id, title FROM eu_chat_conversations WHERE id = $1 AND user_id = $2',
       [conversationId, userId]
     );
 
@@ -29,9 +29,9 @@ router.get('/conversation/:conversationId', async (req, res) => {
         m.message_type, m.metadata, m.created_at, m.updated_at,
         p.name as platform_name, p.display_name as platform_display_name,
         p.icon_url as platform_icon, p.color_hex as platform_color
-       FROM messages m
-       JOIN conversations c ON m.conversation_id = c.id
-       JOIN platforms p ON m.platform_id = p.id
+       FROM eu_chat_messages m
+       JOIN eu_chat_conversations c ON m.conversation_id = c.id
+       JOIN eu_chat_platforms p ON c.platform_id = p.id
        WHERE m.conversation_id = $1
     `;
 
@@ -55,8 +55,8 @@ router.get('/conversation/:conversationId', async (req, res) => {
     // Contar total de mensajes en la conversación
     let countQuery = `
       SELECT COUNT(*) as total
-      FROM messages m
-      JOIN conversations c ON m.conversation_id = c.id
+      FROM eu_chat_messages m
+      JOIN eu_chat_conversations c ON m.conversation_id = c.id
       WHERE m.conversation_id = $1
     `;
 
@@ -95,13 +95,13 @@ router.get('/conversation/:conversationId', async (req, res) => {
     if (unreadMessages.length > 0) {
       const messageIds = unreadMessages.map(msg => msg.id);
       await query(
-        'UPDATE messages SET is_read = true WHERE id = ANY($1)',
+        'UPDATE eu_chat_messages SET is_read = true WHERE id = ANY($1)',
         [messageIds]
       );
 
       // Actualizar contador de mensajes no leídos en la conversación
       await query(
-        'UPDATE conversations SET unread_count = GREATEST(unread_count - $1, 0), updated_at = NOW() WHERE id = $2',
+        'UPDATE eu_chat_conversations SET unread_count = GREATEST(unread_count - $1, 0), updated_at = NOW() WHERE id = $2',
         [unreadMessages.length, conversationId]
       );
 
@@ -145,7 +145,7 @@ router.post('/', async (req, res) => {
 
     // Verificar que la conversación existe y pertenece al usuario
     const conversationResult = await query(
-      'SELECT id, title, platform_id FROM conversations WHERE id = $1 AND user_id = $2',
+      'SELECT id, title, platform_id FROM eu_chat_conversations WHERE id = $1 AND user_id = $2',
       [conversationId, userId]
     );
 
@@ -218,7 +218,7 @@ router.post('/receive', async (req, res) => {
 
     // Verificar que la conversación existe
     const conversationResult = await query(
-      'SELECT id, title, user_id, unread_count FROM conversations WHERE id = $1',
+      'SELECT id, title, user_id, unread_count FROM eu_chat_conversations WHERE id = $1',
       [conversationId]
     );
 
@@ -290,8 +290,8 @@ router.put('/:id/read', async (req, res) => {
     // Verificar que el mensaje existe y pertenece a una conversación del usuario
     const messageResult = await query(
       `SELECT m.id, m.is_read, c.id as conversation_id, c.title, c.unread_count
-       FROM messages m
-       JOIN conversations c ON m.conversation_id = c.id
+       FROM eu_chat_messages m
+       JOIN eu_chat_conversations c ON m.conversation_id = c.id
        WHERE m.id = $1 AND c.user_id = $2`,
       [messageId, userId]
     );
@@ -313,14 +313,14 @@ router.put('/:id/read', async (req, res) => {
 
     // Marcar mensaje como leído
     await query(
-      'UPDATE messages SET is_read = true WHERE id = $1',
+      'UPDATE eu_chat_messages SET is_read = true WHERE id = $1',
       [messageId]
     );
 
     // Actualizar contador de mensajes no leídos en la conversación
     if (message.unread_count > 0) {
       await query(
-        'UPDATE conversations SET unread_count = GREATEST(unread_count - 1, 0), updated_at = NOW() WHERE id = $1',
+        'UPDATE eu_chat_conversations SET unread_count = GREATEST(unread_count - 1, 0), updated_at = NOW() WHERE id = $1',
         [message.conversation_id]
       );
     }
@@ -349,8 +349,8 @@ router.delete('/:id', async (req, res) => {
     // Verificar que el mensaje existe, pertenece al usuario y es un mensaje enviado por él
     const messageResult = await query(
       `SELECT m.id, m.content, m.is_from_user, c.id as conversation_id, c.title
-       FROM messages m
-       JOIN conversations c ON m.conversation_id = c.id
+       FROM eu_chat_messages m
+       JOIN eu_chat_conversations c ON m.conversation_id = c.id
        WHERE m.id = $1 AND c.user_id = $2 AND m.is_from_user = true`,
       [messageId, userId]
     );
@@ -366,7 +366,7 @@ router.delete('/:id', async (req, res) => {
 
     // Eliminar mensaje
     await query(
-      'DELETE FROM messages WHERE id = $1',
+      'DELETE FROM eu_chat_messages WHERE id = $1',
       [messageId]
     );
 
@@ -406,9 +406,9 @@ router.get('/search/:query', async (req, res) => {
         m.message_type, m.created_at,
         c.id as conversation_id, c.title as conversation_title,
         p.name as platform_name, p.display_name as platform_display_name
-       FROM messages m
-       JOIN conversations c ON m.conversation_id = c.id
-       JOIN platforms p ON m.platform_id = p.id
+       FROM eu_chat_messages m
+       JOIN eu_chat_conversations c ON m.conversation_id = c.id
+       JOIN eu_chat_platforms p ON c.platform_id = p.id
        WHERE c.user_id = $1 AND (
          m.content ILIKE $2 OR 
          m.encrypted_content ILIKE $2
