@@ -247,12 +247,15 @@ router.post('/', async (req, res) => {
     }
 
     // Crear conversación
+    // Generar un ID único para la conversación en la plataforma
+    const platformConversationId = `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     const newConversation = await query(
       `INSERT INTO eu_chat_conversations (
-        user_id, platform_id, contact_id, title, last_message_text, last_message_timestamp
-      ) VALUES ($1, $2, $3, $4, $5, NOW())
+        user_id, platform_id, platform_conversation_id, contact_id, title, last_message_text, last_message_timestamp
+      ) VALUES ($1, $2, $3, $4, $5, $6, NOW())
       RETURNING id, title, last_message_text, last_message_timestamp, created_at`,
-      [userId, platformId, contactId || null, title, initialMessage || null]
+      [userId, platformId, platformConversationId, contactId || null, title, initialMessage || null]
     );
 
     const conversation = newConversation.rows[0];

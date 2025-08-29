@@ -160,21 +160,21 @@ router.post('/', async (req, res) => {
 
     // Crear mensaje
     const newMessage = await query(
-      `INSERT INTO messages (
+      `INSERT INTO eu_chat_messages (
         conversation_id, platform_id, content, encrypted_content, 
-        is_from_user, message_type, metadata
-      ) VALUES ($1, $2, $3, $4, true, $5, $6)
+        is_from_user, message_type, metadata, platform_message_id
+      ) VALUES ($1, $2, $3, $4, true, $5, $6, $7)
       RETURNING id, content, encrypted_content, message_type, created_at`,
       [conversationId, conversation.platform_id, content || null, encryptedContent || null, 
-       messageType || 'text', metadata || null]
+       messageType || 'text', metadata || null, `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`]
     );
 
     const message = newMessage.rows[0];
 
     // Actualizar conversación con último mensaje
     await query(
-      `UPDATE conversations 
-       SET last_message_text = $1, last_message_at = NOW(), updated_at = NOW()
+      `UPDATE eu_chat_conversations 
+       SET last_message_text = $1, last_message_timestamp = NOW(), updated_at = NOW()
        WHERE id = $2`,
       [content || '[Mensaje encriptado]', conversationId]
     );
@@ -233,7 +233,7 @@ router.post('/receive', async (req, res) => {
 
     // Crear mensaje recibido
     const newMessage = await query(
-      `INSERT INTO messages (
+      `INSERT INTO eu_chat_messages (
         conversation_id, platform_id, content, encrypted_content, 
         is_from_user, message_type, metadata, platform_message_id
       ) VALUES ($1, $2, $3, $4, false, $5, $6, $7)
@@ -246,8 +246,8 @@ router.post('/receive', async (req, res) => {
 
     // Actualizar conversación con último mensaje y contador de no leídos
     await query(
-      `UPDATE conversations 
-       SET last_message_text = $1, last_message_at = NOW(), 
+      `UPDATE eu_chat_conversations 
+       SET last_message_text = $1, last_message_timestamp = NOW(), 
            unread_count = unread_count + 1, updated_at = NOW()
        WHERE id = $2`,
       [content || '[Mensaje encriptado]', conversationId]
