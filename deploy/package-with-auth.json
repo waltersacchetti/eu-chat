@@ -1,0 +1,20 @@
+{
+  "name": "eu-chat-bridge-backend-with-auth",
+  "version": "1.0.0",
+  "description": "Backend API con autenticación JWT para EU Chat Bridge - Despliegue",
+  "main": "backend-with-auth.js",
+  "scripts": {
+    "start": "node backend-with-auth.js",
+    "dev": "nodemon backend-with-auth.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "pg": "^8.11.3",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,66 @@
+module.exports = {
+  apps: [{
+    name: 'eu-chat-bridge-backend',
+    script: 'src/index.js',
+    cwd: '/eu-chat/backend',
+    instances: 1,
+    exec_mode: 'fork',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 3001,
+      HOST: '0.0.0.0',
+      DB_HOST: 'spainbingo-db.clzgxn85wdjh.eu-west-1.rds.amazonaws.com',
+      DB_PORT: 5432,
+      DB_NAME: 'spainbingo',
+      DB_USER: 'spainbingo_admin',
+      DB_PASSWORD: process.env.DB_PASSWORD || '',
+      JWT_SECRET: process.env.JWT_SECRET || 'your_jwt_secret_here_make_it_long_and_random',
+      JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'your_jwt_refresh_secret_here_make_it_long_and_random',
+      JWT_EXPIRES_IN: '24h',
+      JWT_REFRESH_EXPIRES_IN: '7d',
+      WHATSAPP_API_URL: 'https://graph.facebook.com/v18.0',
+      WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN || '',
+      WHATSAPP_VERIFY_TOKEN: process.env.WHATSAPP_VERIFY_TOKEN || '',
+      WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
+      CORS_ORIGIN: '*',
+      SOCKET_CORS_ORIGIN: '*',
+      RATE_LIMIT_WINDOW_MS: 900000,
+      RATE_LIMIT_MAX_REQUESTS: 100,
+      LOG_LEVEL: 'info',
+      LOG_FILE_PATH: './logs/app.log'
+    },
+    error_file: './logs/err.log',
+    out_file: './logs/out.log',
+    log_file: './logs/combined.log',
+    time: true,
+    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+    merge_logs: true,
+    max_memory_restart: '1G',
+    node_args: '--max-old-space-size=1024',
+    watch: false,
+    ignore_watch: ['node_modules', 'logs', '*.log'],
+    kill_timeout: 5000,
+    wait_ready: true,
+    listen_timeout: 10000,
+    autorestart: true,
+    max_restarts: 10,
+    min_uptime: '10s',
+    restart_delay: 4000,
+    exp_backoff_restart_delay: 100,
+    source_map_support: false,
+    disable_source_map_support: true
+  }],
+
+  deploy: {
+    production: {
+      user: 'ec2-user',
+      host: '54.247.227.217',
+      ref: 'origin/main',
+      repo: 'git@github.com:your-username/eu-chat.git',
+      path: '/eu-chat',
+      'pre-deploy-local': '',
+      'post-deploy': 'npm install && npm run migrate && pm2 reload ecosystem.config.js --env production',
+      'pre-setup': ''
+    }
+  }
+};
