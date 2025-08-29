@@ -16,8 +16,8 @@ router.get('/', async (req, res) => {
         c.created_at, c.updated_at,
         p.name as platform_name, p.display_name as platform_display_name,
         p.icon_url as platform_icon, p.color_hex as platform_color
-      FROM contacts c
-      JOIN platforms p ON c.platform_id = p.id
+      FROM eu_chat_contacts c
+      JOIN eu_chat_platforms p ON c.platform_id = p.id
       WHERE c.user_id = $1
     `;
 
@@ -57,8 +57,8 @@ router.get('/', async (req, res) => {
     // Contar total de contactos (sin paginación)
     let countQuery = `
       SELECT COUNT(*) as total
-      FROM contacts c
-      JOIN platforms p ON c.platform_id = p.id
+      FROM eu_chat_contacts c
+      JOIN eu_chat_platforms p ON c.platform_id = p.id
       WHERE c.user_id = $1
     `;
 
@@ -143,8 +143,8 @@ router.get('/:id', async (req, res) => {
         c.metadata, c.created_at, c.updated_at,
         p.name as platform_name, p.display_name as platform_display_name,
         p.icon_url as platform_icon, p.color_hex as platform_color
-       FROM contacts c
-       JOIN platforms p ON c.platform_id = p.id
+       FROM eu_chat_contacts c
+       JOIN eu_chat_platforms p ON c.platform_id = p.id
        WHERE c.id = $1 AND c.user_id = $2`,
       [contactId, userId]
     );
@@ -206,7 +206,7 @@ router.post('/', async (req, res) => {
 
     // Verificar que la plataforma existe y está activa
     const platformResult = await query(
-      'SELECT id, name FROM platforms WHERE id = $1 AND is_active = true',
+      'SELECT id, name FROM eu_chat_platforms WHERE id = $1 AND is_active = true',
       [platformId]
     );
 
@@ -219,7 +219,7 @@ router.post('/', async (req, res) => {
 
     // Verificar que no existe ya un contacto con la misma plataforma y ID
     const existingContact = await query(
-      'SELECT id FROM contacts WHERE user_id = $1 AND platform_id = $2 AND platform_contact_id = $3',
+      'SELECT id FROM eu_chat_contacts WHERE user_id = $1 AND platform_id = $2 AND platform_contact_id = $3',
       [userId, platformId, platformContactId]
     );
 
@@ -232,7 +232,7 @@ router.post('/', async (req, res) => {
 
     // Crear contacto
     const newContact = await query(
-      `INSERT INTO contacts (
+      `INSERT INTO eu_chat_contacts (
         user_id, platform_id, platform_contact_id, display_name, phone_number, 
         email, avatar_url, metadata
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -279,7 +279,7 @@ router.put('/:id', async (req, res) => {
 
     // Verificar que el contacto existe y pertenece al usuario
     const existingContact = await query(
-      'SELECT id FROM contacts WHERE id = $1 AND user_id = $2',
+      'SELECT id FROM eu_chat_contacts WHERE id = $1 AND user_id = $2',
       [contactId, userId]
     );
 
@@ -337,7 +337,7 @@ router.put('/:id', async (req, res) => {
     values.push(contactId);
 
     const updateQuery = `
-      UPDATE contacts 
+      UPDATE eu_chat_contacts 
       SET ${updateFields.join(', ')}
       WHERE id = $${paramCount}
       RETURNING id, display_name, phone_number, email, avatar_url, updated_at
@@ -378,7 +378,7 @@ router.delete('/:id', async (req, res) => {
 
     // Verificar que el contacto existe y pertenece al usuario
     const existingContact = await query(
-      'SELECT id, display_name FROM contacts WHERE id = $1 AND user_id = $2',
+      'SELECT id, display_name FROM eu_chat_contacts WHERE id = $1 AND user_id = $2',
       [contactId, userId]
     );
 
@@ -391,7 +391,7 @@ router.delete('/:id', async (req, res) => {
 
     // Eliminar contacto
     await query(
-      'DELETE FROM contacts WHERE id = $1 AND user_id = $2',
+      'DELETE FROM eu_chat_contacts WHERE id = $1 AND user_id = $2',
       [contactId, userId]
     );
 
@@ -430,8 +430,8 @@ router.get('/search/:query', async (req, res) => {
         c.avatar_url, c.is_favorite, c.is_blocked, c.last_interaction,
         p.name as platform_name, p.display_name as platform_display_name,
         p.icon_url as platform_icon, p.color_hex as platform_color
-       FROM contacts c
-       JOIN platforms p ON c.platform_id = p.id
+       FROM eu_chat_contacts c
+       JOIN eu_chat_platforms p ON c.platform_id = p.id
        WHERE c.user_id = $1 AND (
          c.display_name ILIKE $2 OR 
          c.phone_number ILIKE $2 OR 
@@ -495,7 +495,7 @@ router.put('/:id/favorite', async (req, res) => {
 
     // Verificar que el contacto existe y pertenece al usuario
     const existingContact = await query(
-      'SELECT id, display_name FROM contacts WHERE id = $1 AND user_id = $2',
+      'SELECT id, display_name FROM eu_chat_contacts WHERE id = $1 AND user_id = $2',
       [contactId, userId]
     );
 
@@ -508,7 +508,7 @@ router.put('/:id/favorite', async (req, res) => {
 
     // Actualizar estado de favorito
     await query(
-      'UPDATE contacts SET is_favorite = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3',
+      'UPDATE eu_chat_contacts SET is_favorite = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3',
       [isFavorite, contactId, userId]
     );
 
