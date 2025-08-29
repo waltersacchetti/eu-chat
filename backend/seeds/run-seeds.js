@@ -97,7 +97,7 @@ async function createPlatforms() {
     
     for (const platform of platforms) {
       const result = await pool.query(`
-        INSERT INTO platforms (
+        INSERT INTO eu_chat_platforms (
           name, display_name, api_url, icon_url, color_hex,
           is_active, requires_verification, supports_e2ee
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)

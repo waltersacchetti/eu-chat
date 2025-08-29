@@ -3,7 +3,7 @@ const { query } = require('../config/database');
 async function createUsersTable() {
   try {
     const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS users (
+      CREATE TABLE IF NOT EXISTS eu_chat_users (
         id SERIAL PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
         username VARCHAR(100) UNIQUE NOT NULL,
@@ -35,8 +35,8 @@ async function createUsersTable() {
 
 async function dropUsersTable() {
   try {
-    await query('DROP TABLE IF EXISTS users CASCADE;');
-    console.log('🗑️ Tabla users eliminada');
+    await query('DROP TABLE IF EXISTS eu_chat_users CASCADE;');
+    console.log('🗑️ Tabla eu_chat_users eliminada');
   } catch (error) {
     console.error('❌ Error eliminando tabla users:', error);
     throw error;
