@@ -8,7 +8,7 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const dbConfig = {
   host: process.env.DB_HOST || 'spainbingo-db.clzgxn85wdjh.eu-west-1.rds.amazonaws.com',
   port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'spainbingo',
+          database: process.env.DB_NAME || 'eu_chat_bridge',
   user: process.env.DB_USER || 'spainbingo_admin',
   password: process.env.DB_PASSWORD || '',
   ssl: {
