@@ -25,13 +25,7 @@ async function createUsersTable() {
     await query(createTableQuery);
     console.log('✅ Tabla users creada exitosamente');
 
-    // Crear índices para mejorar rendimiento (uno por uno para evitar errores)
-    await query('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);');
-    await query('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);');
-    await query('CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone_number);');
-    await query('CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);');
-    
-    console.log('✅ Índices de users creados exitosamente');
+    console.log('✅ Tabla users creada exitosamente - índices se crearán en migración separada');
 
   } catch (error) {
     console.error('❌ Error creando tabla users:', error);

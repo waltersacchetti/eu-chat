@@ -26,17 +26,7 @@ async function createContactsTable() {
     await query(createTableQuery);
     console.log('✅ Tabla contacts creada exitosamente');
 
-    // Crear índices para mejorar rendimiento
-    const createIndexesQuery = `
-      CREATE INDEX IF NOT EXISTS idx_contacts_user_id ON contacts(user_id);
-      CREATE INDEX IF NOT EXISTS idx_contacts_platform_id ON contacts(platform_id);
-      CREATE INDEX IF NOT EXISTS idx_contacts_platform_contact_id ON contacts(platform_contact_id);
-      CREATE INDEX IF NOT EXISTS idx_contacts_favorite ON contacts(is_favorite);
-      CREATE INDEX IF NOT EXISTS idx_contacts_last_interaction ON contacts(last_interaction);
-    `;
-
-    await query(createIndexesQuery);
-    console.log('✅ Índices de contacts creados exitosamente');
+    console.log('✅ Tabla contacts creada exitosamente - índices se crearán en migración separada');
 
   } catch (error) {
     console.error('❌ Error creando tabla contacts:', error);
