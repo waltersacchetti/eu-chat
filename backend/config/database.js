@@ -8,7 +8,8 @@ const dbConfig = {
   user: process.env.DB_USER || 'spainbingo_admin',
   password: process.env.DB_PASSWORD || '',
   ssl: process.env.DB_SSL === 'true' ? {
-    rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED === 'false' ? false : true,
+    rejectUnauthorized: false,
+    checkServerIdentity: () => undefined,
     ca: undefined,
     key: undefined,
     cert: undefined
