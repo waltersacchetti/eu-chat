@@ -73,7 +73,7 @@ EU Chat Bridge es una plataforma de mensajería unificada que permite a los usua
 
 1. **Clonar repositorio**
 ```bash
-git clone https://github.com/tu-usuario/eu-chat.git
+git clone https://github.com/waltersacchetti/eu-chat.git
 cd eu-chat
 ```
 
